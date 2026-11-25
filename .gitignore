@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+out/
+checkpoints/
+hf/
+dataset/.tmp/
+*.pth
+*.bin
+.DS_Store
+.pytest_cache/
+.streamlit/
