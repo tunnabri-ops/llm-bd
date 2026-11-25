@@ -14,6 +14,16 @@ import json
 import random
 import re
 
+# Phase-2 expansion data (original Bangla, v1.1): extra seeds, topics,
+# templates and SFT pairs. Import works whether the builder is run as a
+# script (python dataset/build_dataset.py) or as a module.
+try:
+    from phase2_data import (EXPAND_TEMPLATES_2, PRETRAIN_SEEDS_2,
+                             SFT_SEEDS_2, TOPIC_FACTS_2)
+except ImportError:  # run as `python -m dataset.build_dataset`
+    from dataset.phase2_data import (EXPAND_TEMPLATES_2, PRETRAIN_SEEDS_2,
+                                     SFT_SEEDS_2, TOPIC_FACTS_2)
+
 random.seed(42)
 
 # ---------------------------------------------------------------- hand-written seeds
@@ -188,9 +198,9 @@ def _clean(text):
 
 
 def build_pretrain(extra_files):
-    texts = [_clean(s) for s in PRETRAIN_SEEDS]
-    for topic, fact in TOPIC_FACTS:
-        for tmpl in EXPAND_TEMPLATES:
+    texts = [_clean(s) for s in PRETRAIN_SEEDS + PRETRAIN_SEEDS_2]
+    for topic, fact in TOPIC_FACTS + TOPIC_FACTS_2:
+        for tmpl in EXPAND_TEMPLATES + EXPAND_TEMPLATES_2:
             texts.append(_clean(tmpl.format(t=topic, f=fact)))
     for f in extra_files:
         with open(f, encoding="utf-8") as fh:
@@ -208,7 +218,7 @@ def build_pretrain(extra_files):
 
 
 def build_sft():
-    pairs = list(SFT_SEEDS)
+    pairs = list(SFT_SEEDS) + list(SFT_SEEDS_2)
     # systematic math / translation expansion (each unique)
     for a in range(2, 21):
         pairs.append((f"{a} + {a+3} কত?", "", f"{a} + {a+3} = {a + a + 3}।"))
@@ -222,9 +232,15 @@ def build_sft():
     for a in range(5, 16):
         pairs.append((f"{a+10} - {a} কত?", "", f"{a+10} - {a} = 10।"))
         pairs.append((f"{a} + {a} কত?", "", f"{a} + {a} = {2*a}।"))
-    months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন"]
+    months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+              "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"]
     for i, m in enumerate(months, 1):
         pairs.append((f"{m} বছরের কততম মাস?", "", f"{m} বছরের {i} নম্বর মাস।"))
+    for a in range(21, 31):
+        pairs.append((f"{a} + {a+3} কত?", "", f"{a} + {a+3} = {a + a + 3}।"))
+        pairs.append((f"{a} × ৫ কত?", "", f"{a} × ৫ = {a * 5}।"))
+    for a in range(4, 14):
+        pairs.append((f"{a*3} ÷ ৩ কত?", "", f"{a*3} ÷ ৩ = {a}।"))
     seen, out = set(), []
     for ins, inp, outp in pairs:
         key = (ins, inp)
@@ -250,12 +266,14 @@ def main():
     os.makedirs("dataset", exist_ok=True)
     pretrain = build_pretrain(args.extra_text)
     random.shuffle(pretrain)
-    n_val = max(1, int(len(pretrain) * args.val_ratio))
-    _write_jsonl("dataset/pretrain_bangla.jsonl", pretrain)
-    _write_jsonl("dataset/pretrain_val.jsonl", pretrain[:n_val])
+    # 20 held-out val lines, NOT in train (v1 accidentally wrote them twice).
+    n_val = 20 if len(pretrain) >= 100 else max(1, int(len(pretrain) * args.val_ratio))
+    val, train = pretrain[:n_val], pretrain[n_val:]
+    _write_jsonl("dataset/pretrain_bangla.jsonl", train)
+    _write_jsonl("dataset/pretrain_val.jsonl", val)
     sft = build_sft()
     _write_jsonl("dataset/sft_bangla.jsonl", sft)
-    print(f"pretrain: {len(pretrain)} lines (val {n_val})")
+    print(f"pretrain: {len(train)} train lines + {n_val} val lines")
     print(f"sft: {len(sft)} pairs")
 
 
