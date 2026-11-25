@@ -1,0 +1,27 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+      - name: Compile all Python files
+        run: python -m compileall -q model trainer scripts tests *.py
+      - name: Build datasets
+        run: python dataset/build_dataset.py
+      - name: Train tokenizer
+        run: python train_tokenizer.py
+      - name: Tiny smoke training (60 steps, CPU)
+        run: python trainer/train_pretrain.py --tiny --steps 60 --out out/tiny_demo.pth
+      - name: Eval smoke test
+        run: python eval_llm.py --checkpoint out/tiny_demo.pth --prompt "ঢাকা বাংলাদেশের" --max-new 16
+      - name: Run tests
+        run: pytest tests/ -q
