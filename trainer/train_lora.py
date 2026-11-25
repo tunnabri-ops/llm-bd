@@ -64,6 +64,10 @@ def main():
     tok = BanglaTokenizer("model/tokenizer.json")
     model = LLM.load(args.init, device=device)
     n = attach_lora(model, rank=args.rank)
+    # LoRA means ONLY the adapters train — freeze everything else (the
+    # embedding, MLP and untouched attention weights stay fixed).
+    for name, p in model.named_parameters():
+        p.requires_grad = ("lora_" in name)
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
     print(f"LoRA adapters: {n}, trainable {trainable:,} / {total:,} params "

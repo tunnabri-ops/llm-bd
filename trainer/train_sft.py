@@ -42,6 +42,8 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="out/sft_demo.pth")
+    ap.add_argument("--weights-only", action="store_true",
+                    help="save model weights only (no optimizer state) — much smaller file")
     args = ap.parse_args()
     random.seed(42)
     torch.manual_seed(42)
@@ -72,8 +74,11 @@ def main():
         if step % 10 == 0 or step == args.steps - 1:
             print(f"sft step {step:4d} loss {loss.item():.4f}", flush=True)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    torch.save({"config": model.cfg.to_dict(), "state_dict": model.state_dict(),
-                "optimizer": opt.state_dict(), "step": args.steps}, args.out)
+    ckpt = {"config": model.cfg.to_dict(), "state_dict": model.state_dict(),
+            "step": args.steps}
+    if not args.weights_only:
+        ckpt["optimizer"] = opt.state_dict()
+    torch.save(ckpt, args.out)
     print(f"saved {args.out}  LOSS_START={first:.4f} LOSS_END={last:.4f}")
 
 
