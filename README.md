@@ -8,7 +8,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 
-**[বাংলা README](README-BN.md) | [Colab notebook](train.ipynb) | [Demo prompts](examples/demo_prompts_bn.md)**
+**[বাংলা README](README-BN.md) | [Colab notebook](train.ipynb) | [Demo prompts](examples/demo_prompts_bn.md) | [v1.0.0 release notes](RELEASE_NOTES_v1.0.0.md)**
 
 Bangla is spoken by 230+ million people — yet almost every open LLM tutorial
 trains in English or Chinese. **LLM BD** fixes that: a complete, tiny-LLM-from-scratch
@@ -40,11 +40,30 @@ git clone https://github.com/tunnabri-ops/llm-bd.git
 cd llm-bd
 pip install -r requirements.txt
 
-python dataset/build_dataset.py   # 207 pretrain sentences + 132 SFT pairs, Bangla
+python dataset/build_dataset.py   # 1016 pretrain sentences + 325 SFT pairs, Bangla
 python train_tokenizer.py         # Bangla BPE tokenizer (target vocab 8192)
-python trainer/train_pretrain.py --tiny --steps 100   # CPU demo, minutes
+python trainer/train_pretrain.py --tiny --steps 200   # CPU demo, minutes
 python chat.py                    # chat in Bangla
 ```
+
+## v1.0.0 Release — demo weights (no training needed)
+
+Don't want to train first? Download the tiny demo checkpoints from the
+**[v1.0.0 release](https://github.com/tunnabri-ops/llm-bd/releases/tag/v1.0.0)**
+and chat immediately:
+
+```bash
+git clone https://github.com/tunnabri-ops/llm-bd.git
+cd llm-bd
+pip install -r requirements.txt
+# download llm-bd-tiny-demo.pth + llm-bd-sft-demo.pth from the release,
+# save them as out/tiny_demo.pth and out/sft_demo.pth
+python chat.py
+```
+
+Both files are weights-only, 17.4 MB each (SHA-256 in
+[`RELEASE_NOTES_v1.0.0.md`](RELEASE_NOTES_v1.0.0.md)). The demo is rough —
+see the honest numbers below — but it runs on any laptop CPU in seconds.
 
 Full 64M run (needs a GPU — free Colab T4 works):
 
@@ -96,15 +115,17 @@ Check the counts yourself: `python model/model.py` prints both.
 ## What it actually does (measured, not promised)
 
 The tiny demo was really trained on CPU in this repo — loss, steps and raw
-generations are in [`examples/sample_generation.md`](examples/sample_generation.md):
+generations are in [`examples/sample_generation.md`](examples/sample_generation.md),
+and the full 30-prompt benchmark in
+[`examples/benchmark_results.md`](examples/benchmark_results.md):
 
-- **Pretrain (`llm-bd-tiny`, 100 steps, CPU, ~2 min): loss 6.3745 → 3.0293**
-- **Held-out perplexity: 35.72** (`dataset/pretrain_val.jsonl`)
-- **SFT (30 steps): loss 5.5351 → 2.6178 · LoRA (10 steps): 5.5351 → 3.0786**
-- **Checkpoint: `out/tiny_demo.pth`, 17.4 MB** (weights only)
+- **Pretrain (`llm-bd-tiny`, 200 steps, CPU, ~3.5 min): loss 6.4114 → 2.2212**
+- **Held-out perplexity: 13.52** (`dataset/pretrain_val.jsonl`, 20 lines, none in train)
+- **SFT (60 steps): loss 6.6552 → 1.4696 · LoRA (20 steps, rank 8, 0.75% of params): 6.6552 → 5.8644**
+- **Checkpoint: `out/tiny_demo.pth`, 17.4 MB** (weights only; also in the v1.0.0 release)
 - **Tests: 6/6 pass** (`pytest tests/ -q`)
 
-It is a ~4.3M model on a 207-sentence corpus: its Bangla is rough and it
+It is a ~4.3M model on a 1,016-sentence corpus: its Bangla is rough and it
 hallucinates. That is the honest baseline — the point of the project is that
 *you* can see the loss fall and then scale it up.
 
@@ -116,9 +137,12 @@ python eval_llm.py --checkpoint out/tiny_demo.pth --prompt "ঢাকা বা�
 pytest tests/ -q
 ```
 
-Full 64M benchmarks (held-out perplexity + the 20 demo prompts in
+Full 64M benchmarks (held-out perplexity + the 30 demo prompts in
 `examples/demo_prompts_bn.md`) are measured after the GPU run and will be
 published in the release notes — no numbers are claimed before they are run.
+The v1.0.0 numbers above are the tiny-demo baseline; the v1.0 run
+(100 steps, 207 sentences, PPL 35.72) is kept for comparison in
+[`examples/sample_generation.md`](examples/sample_generation.md).
 
 ## Chat, API, WebUI
 

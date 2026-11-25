@@ -2,7 +2,7 @@
 
 > **নিজের বাংলা ভাষা মডেল, একদম শূন্য থেকে। কোনো API কী নেই, অন্যের মডেল ফাইন-টিউন নয় — পুরো মডেলটাই আপনি নিজে বানাবেন।**
 
-[English README](README.md) | [Colab-এ খুলুন](https://colab.research.google.com/github/tunnabri-ops/llm-bd/blob/main/train.ipynb)
+[English README](README.md) | [Colab-এ খুলুন](https://colab.research.google.com/github/tunnabri-ops/llm-bd/blob/main/train.ipynb) | [v1.0.0 রিলিজ নোট](RELEASE_NOTES_v1.0.0.md) | [ট্রেনিং গাইড (বাংলা)](docs/TRAINING_GUIDE_BN.md)
 
 ## কী আছে এখানে?
 
@@ -17,11 +17,20 @@ git clone https://github.com/tunnabri-ops/llm-bd.git
 cd llm-bd
 pip install -r requirements.txt
 
-python dataset/build_dataset.py   # ২০৭টি প্রিট্রেন বাক্য + ১৩২টি SFT প্রশ্নোত্তর
+python dataset/build_dataset.py   # ১০১৬টি প্রিট্রেন বাক্য + ৩২৫টি SFT প্রশ্নোত্তর
 python train_tokenizer.py         # বাংলা BPE টোকেনাইজার
-python trainer/train_pretrain.py --tiny --steps 100   # CPU ডেমো
+python trainer/train_pretrain.py --tiny --steps 200   # CPU ডেমো
 python chat.py                    # বাংলায় চ্যাট করুন
 ```
+
+## v1.0.0 রিলিজ — ডেমো ওয়েট (ট্রেনিং ছাড়াই)
+
+ট্রেনিং না করে এখনই চ্যাট করতে চাইলে [v1.0.0 রিলিজ](https://github.com/tunnabri-ops/llm-bd/releases/tag/v1.0.0)
+থেকে `llm-bd-tiny-demo.pth` ও `llm-bd-sft-demo.pth` (প্রতিটি ১৭.৪ MB)
+ডাউনলোড করে `out/` ফোল্ডারে `tiny_demo.pth` ও `sft_demo.pth` নামে রাখুন,
+তারপর `python chat.py` চালান। আসল মাপা ফলাফল:
+প্রিট্রেন লস ৬.৪১১৪ → ২.২২১২, পারপ্লেক্সিটি ১৩.৫২ —
+বিস্তারিত [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md)-এ।
 
 GPU থাকলে পুরো মডেল:
 
@@ -57,6 +66,8 @@ python trainer/train_sft.py --init checkpoints/llm-bd-64M/pretrain.pth --steps 3
 ## ডেমো আউটপুট
 
 আসল ট্রেনিং রানের আউটপুট দেখুন: [examples/sample_generation.md](examples/sample_generation.md)
+(প্রিট্রেন লস ৬.৪১১৪ → ২.২২১২, পারপ্লেক্সিটি ১৩.৫২) ও
+[examples/benchmark_results.md](examples/benchmark_results.md) (৩০টি ডেমো প্রম্পটের আসল উত্তর)।
 
 ## লাইসেন্স
 
